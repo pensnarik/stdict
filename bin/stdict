@@ -70,7 +70,7 @@ class App():
             for trg in section.xpath('.//ul[@class="semb"]//li//div[@class="trg"]'):
                 span_iteration = trg.xpath('.//p//span[@class="iteration"]')
                 if len(span_iteration) == 0: continue
-                index = span_iteration[0].text_content()
+                index = span_iteration[0].text_content() or '1'
 
                 span_ind = trg.xpath('.//span[@class="ind"]')
                 if len(span_ind) == 0: continue
