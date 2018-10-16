@@ -7,6 +7,8 @@ import argparse
 import requests
 from lxml.html import fromstring
 
+__version__ = '0.01a'
+
 COLORS = {'red': 31, 'green': 32, 'yellow': 33, 'blue': 34, 'white': 1, 'underline': 4}
 
 class App():
@@ -18,6 +20,9 @@ class App():
         arg_parser.add_argument('--examples', type=int, default=3, help='Number of word usage examples to display')
 
         self.args = arg_parser.parse_args()
+
+        if not os.path.isdir(self.get_cache_path()):
+            os.makedirs(self.get_cache_path())
 
     def with_color(self, message, color):
         """
@@ -32,8 +37,11 @@ class App():
             color = color
         return "\x1b[%dm%s\x1b[0m" % (color, message)
 
+    def get_cache_path(self):
+        return os.path.join(os.path.expanduser('~'), '.stdict-cache')
+
     def get_cache_filename(self, word):
-        return './.cache/%s.cache' % word
+        return os.path.join(self.get_cache_path(), '%s.cache' % word)
 
     def is_result_empty(self, html):
         """

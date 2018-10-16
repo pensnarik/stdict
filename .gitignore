@@ -1,2 +1,5 @@
 *.pyc
+*.swp
 bin/.cache
+dist/
+stdict.egg-info/
