@@ -32,6 +32,7 @@ Possible options are:
 option | description 
 ---------|------------
 --no-color | Do not colorize output
+--examples <count> | Limit number of examples to display by <count>, default is 3
 
 # Requiremets
 

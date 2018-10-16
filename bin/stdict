@@ -7,7 +7,7 @@ import argparse
 import requests
 from lxml.html import fromstring
 
-COLORS = {'red': 31, 'green': 32, 'yellow': 33, 'blue': 34}
+COLORS = {'red': 31, 'green': 32, 'yellow': 33, 'blue': 34, 'white': 1, 'underline': 4}
 
 class App():
 
@@ -15,6 +15,7 @@ class App():
         arg_parser = argparse.ArgumentParser(description='Console dictionary word lookup')
         arg_parser.add_argument('word', type=str, help='Word to lookup')
         arg_parser.add_argument('--no-color', action='store_true', default=False)
+        arg_parser.add_argument('--examples', type=int, default=3, help='Number of word usage examples to display')
 
         self.args = arg_parser.parse_args()
 
@@ -51,7 +52,7 @@ class App():
         Returns tuple where the first variable indicates a status and the second one
         contains text
         """
-        result = ''
+        result = self.with_color(word, 'white')
 
         if os.path.isfile(self.get_cache_filename(word)):
             text = open(self.get_cache_filename(word), 'rt').read()
@@ -67,9 +68,14 @@ class App():
         if self.is_result_empty(html):
             return True, 'No exact matches found for "%s"' % word
 
+        # Pronunciation
+        span = html.xpath('//span[@class="phoneticspelling"]')
+        if len(span) > 0:
+            result = result + ' %s\n\n' % span[0].text_content()
+
         for section in html.xpath('//section[@class="gramb"]'):
             pos = section.xpath('.//span[@class="pos"]')[0].text_content()
-            result = result + '\n[%s]\n\n' % self.with_color(pos, 'green')
+            result = result + '[%s]\n\n' % self.with_color(pos, 'green')
             # Sense registers is unused now
             span_sense_registers = section.xpath('.//span[@class="sense-registers"]')
             if len(span_sense_registers) > 0:
@@ -87,7 +93,20 @@ class App():
 
                 definition = span_ind[0].text_content()
 
-                result = result + '%s. %s' % (index, definition) + '\n'
+                result = result + '%s. %s' % (self.with_color(index, 'white'), definition) + '\n'
+
+                # Get example sentences
+
+                examples = []
+
+                for example_item in trg.xpath('.//*[@class="ex"]'):
+                    examples.append(str(example_item.text_content()))
+
+                examples = examples[0:self.args.examples]
+
+                if len(examples) > 0:
+                    result = result + '\n%s\n\n' % self.with_color('Examples:', 'underline')
+                    result = result + '\n'.join(['  %s' % s for s in examples]) + '\n\n'
 
         return True, result
 
