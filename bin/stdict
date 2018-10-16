@@ -1,0 +1,81 @@
+#!/usr/bin/env python3
+
+import os
+import sys
+import argparse
+
+import requests
+from lxml.html import fromstring
+
+class App():
+
+    def __init__(self):
+        arg_parser = argparse.ArgumentParser(description='Console dictionary word lookup')
+        arg_parser.add_argument('word', type=str, help='Word to lookup')
+
+        self.args = arg_parser.parse_args()
+
+    def get_cache_filename(self, word):
+        return './.cache/%s.cache' % word
+
+    def is_result_empty(self, html):
+        h2 = html.xpath('//h2[@class="searchHeading"]')
+        if len(h2) > 0:
+            if h2[0].text_content().starts_with('No exact matches found'):
+                return True
+        return False
+
+    def lookup(self, word):
+        result = ''
+
+        if os.path.isfile(self.get_cache_filename(word)):
+            text = open(self.get_cache_filename(word), 'rt').read()
+        else:
+            r = requests.get('https://en.oxforddictionaries.com/definition/%s' % word)
+            if r.status_code != 200:
+                return False, None
+            with open(self.get_cache_filename(word), 'wt') as f:
+                f.write(r.text)
+            text = r.text
+        # Parse the result
+        html = fromstring(text)
+        if self.is_result_empty(html):
+            return True, 'No exact matches found for "%s"' % word
+
+        for section in html.xpath('//section[@class="gramb"]'):
+            pos = section.xpath('.//span[@class="pos"]')[0].text_content()
+            result = result + '\n[%s]\n\n' % pos
+
+            # Sense registers is unused now
+            span_sense_registers = section.xpath('.//span[@class="sense-registers"]')
+            if len(span_sense_registers) > 0:
+                sense_registers = span_sense_registers[0].text_content().strip()
+            else:
+                sense_registers = None
+
+            for trg in section.xpath('.//ul[@class="semb"]//li//div[@class="trg"]'):
+                span_iteration = trg.xpath('.//p//span[@class="iteration"]')
+                if len(span_iteration) == 0: continue
+                index = span_iteration[0].text_content()
+
+                span_ind = trg.xpath('.//span[@class="ind"]')
+                if len(span_ind) == 0: continue
+
+                definition = span_ind[0].text_content()
+
+                result = result + '%s. %s' % (index, definition) + '\n'
+
+        return True, result
+
+    def run(self):
+        status, result = self.lookup(self.args.word)
+
+        if status is False:
+            print('Could not lookup word')
+            sys.exit(1)
+
+        print(result)
+
+if __name__ == '__main__':
+    app = App()
+    sys.exit(app.run())
