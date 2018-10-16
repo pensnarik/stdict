@@ -20,7 +20,8 @@ class App():
 
     def with_color(self, message, color):
         """
-        Colored output
+        Colored output, "color" argument can be both a color name (see COLORS dict) and
+        a color code
         """
         if self.args.no_color:
             return message
@@ -34,9 +35,12 @@ class App():
         return './.cache/%s.cache' % word
 
     def is_result_empty(self, html):
+        """
+        Checks whether the result is empty
+        """
         h2 = html.xpath('//h2[@class="searchHeading"]')
         if len(h2) > 0:
-            if h2[0].text_content().starts_with('No exact matches found'):
+            if str(h2[0].text_content()).startswith('No exact matches found'):
                 return True
         return False
 
