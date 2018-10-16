@@ -7,13 +7,28 @@ import argparse
 import requests
 from lxml.html import fromstring
 
+COLORS = {'red': 31, 'green': 32, 'yellow': 33, 'blue': 34}
+
 class App():
 
     def __init__(self):
         arg_parser = argparse.ArgumentParser(description='Console dictionary word lookup')
         arg_parser.add_argument('word', type=str, help='Word to lookup')
+        arg_parser.add_argument('--no-color', action='store_true', default=False)
 
         self.args = arg_parser.parse_args()
+
+    def with_color(self, message, color):
+        """
+        Colored output
+        """
+        if self.args.no_color:
+            return message
+        if isinstance(color, str):
+            color = COLORS.get(color, 39)
+        else:
+            color = color
+        return "\x1b[%dm%s\x1b[0m" % (color, message)
 
     def get_cache_filename(self, word):
         return './.cache/%s.cache' % word
@@ -44,8 +59,7 @@ class App():
 
         for section in html.xpath('//section[@class="gramb"]'):
             pos = section.xpath('.//span[@class="pos"]')[0].text_content()
-            result = result + '\n[%s]\n\n' % pos
-
+            result = result + '\n[%s]\n\n' % self.with_color(pos, 'green')
             # Sense registers is unused now
             span_sense_registers = section.xpath('.//span[@class="sense-registers"]')
             if len(span_sense_registers) > 0:
