@@ -25,22 +25,7 @@ $ sudo python3 setup.py install
 
 # Usage example
 
-```shell
-$ ./stdict magic
-
-[noun]
-
-1. The power of apparently influencing events by using mysterious or supernatural forces.
-
-[adjective]
-
-1. Having or apparently having supernatural powers.
-2. Wonderful; exciting.
-
-[verb]
-
-1. Move, change, or create by or as if by magic.
-```
+![efficiency](screenshots/efficiency.png)
 
 # Options
 
