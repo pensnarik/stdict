@@ -1,4 +1,4 @@
-# What sdict is?
+# What stdict is?
 `stdict` is a console tool to lookup words in online Oxford Dictionary. `sdict` is written on Python and
 requires Python 3 interpreter.
 
