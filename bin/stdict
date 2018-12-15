@@ -18,6 +18,11 @@ class App():
         arg_parser.add_argument('word', type=str, help='Word to lookup')
         arg_parser.add_argument('--no-color', action='store_true', default=False)
         arg_parser.add_argument('--examples', type=int, default=3, help='Number of word usage examples to display')
+        arg_parser.add_argument('--noun', action='store_true', default=False)
+        arg_parser.add_argument('--verb', action='store_true', default=False)
+        arg_parser.add_argument('--adj', action='store_true', default=False)
+        arg_parser.add_argument('--adv', action='store_true', default=False)
+
 
         self.args = arg_parser.parse_args()
 
@@ -53,6 +58,30 @@ class App():
                 return True
         return False
 
+    def get_definitions(self, section):
+        for trg in section.xpath('.//ul[@class="semb"]//li//div[@class="trg"]'):
+            span_iteration = trg.xpath('.//p//span[@class="iteration"]')
+            if len(span_iteration) == 0: continue
+            index = span_iteration[0].text_content() or '1'
+            span_ind = trg.xpath('.//span[@class="ind"]')
+            if len(span_ind) == 0: continue
+
+            definition = '%s. %s' % (self.with_color(index, 'white'), span_ind[0].text_content()) + '\n'
+
+            examples = []
+
+            for example_item in trg.xpath('.//*[@class="ex"]'):
+                examples.append(str(example_item.text_content()))
+
+            examples = examples[0:self.args.examples]
+
+            if len(examples) > 0:
+                definition = definition + '\n%s\n\n' % self.with_color('Examples:', 'underline')
+                definition = definition + '\n'.join(['  %s' % s for s in examples]) + '\n\n'
+
+            yield definition
+
+
     def lookup(self, word):
         """
         Fetches webpage with a word definition and parses it
@@ -60,6 +89,9 @@ class App():
         Returns tuple where the first variable indicates a status and the second one
         contains text
         """
+        pos_args = {'noun': self.args.noun, 'verb': self.args.verb, 'adjective': self.args.adj,
+                    'adverb': self.args.adv}
+        self.requested_pos = {k:v for (k,v) in pos_args.items() if v}.keys()
         result = self.with_color(word, 'white')
 
         if os.path.isfile(self.get_cache_filename(word)):
@@ -83,6 +115,8 @@ class App():
 
         for section in html.xpath('//section[@class="gramb"]'):
             pos = section.xpath('.//span[@class="pos"]')[0].text_content()
+            if len(self.requested_pos) > 0 and pos not in self.requested_pos:
+                continue
             result = result + '[%s]\n\n' % self.with_color(pos, 'green')
             # Sense registers is unused now
             span_sense_registers = section.xpath('.//span[@class="sense-registers"]')
@@ -91,30 +125,8 @@ class App():
             else:
                 sense_registers = None
 
-            for trg in section.xpath('.//ul[@class="semb"]//li//div[@class="trg"]'):
-                span_iteration = trg.xpath('.//p//span[@class="iteration"]')
-                if len(span_iteration) == 0: continue
-                index = span_iteration[0].text_content() or '1'
-
-                span_ind = trg.xpath('.//span[@class="ind"]')
-                if len(span_ind) == 0: continue
-
-                definition = span_ind[0].text_content()
-
-                result = result + '%s. %s' % (self.with_color(index, 'white'), definition) + '\n'
-
-                # Get example sentences
-
-                examples = []
-
-                for example_item in trg.xpath('.//*[@class="ex"]'):
-                    examples.append(str(example_item.text_content()))
-
-                examples = examples[0:self.args.examples]
-
-                if len(examples) > 0:
-                    result = result + '\n%s\n\n' % self.with_color('Examples:', 'underline')
-                    result = result + '\n'.join(['  %s' % s for s in examples]) + '\n\n'
+            for definition in self.get_definitions(section):
+                result = result + definition
 
         return True, result
 
