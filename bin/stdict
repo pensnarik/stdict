@@ -63,7 +63,7 @@ class App():
             span_iteration = trg.xpath('.//p//span[@class="iteration"]')
             if len(span_iteration) == 0: continue
             index = span_iteration[0].text_content() or '1'
-            span_ind = trg.xpath('.//span[@class="ind"]')
+            span_ind = trg.xpath(".//span[contains(@class, 'ind')]")
             if len(span_ind) == 0: continue
 
             definition = '%s. %s' % (self.with_color(index, 'white'), span_ind[0].text_content()) + '\n'
